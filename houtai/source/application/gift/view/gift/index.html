@@ -1,0 +1,179 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <title>杨家将礼品卡券</title>
+    <link href="/assets/gift/images/style.css" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="/assets/store/css/app.css?v=1"/>
+    <link rel="stylesheet" href="/assets/mpic/mpicker.css"/>
+    <script src="/assets/common/js/jquery.min.js"></script>
+
+</head>
+<body>
+
+{if condition='$detail'}
+<img  id='pic' src="{$detail.banner_pic}">
+{/if}
+<form action="{:url('Receive')}" id="myform">
+    <div class="listItems-wrap exchange-wrap">
+        <div class="listItems">
+            <div class="listLeft">
+                <div class="list-label">序列号</div>
+            </div>
+            <div class="listRight">
+                <input class="list-input" id="order_no" name="order_no"  placeholder="请输入序列号" />
+            </div>
+        </div>
+        <div class="listItems">
+            <div class="listLeft">
+                <div class="weui-label">验证码</div>
+            </div>
+            <div class="listRight">
+                <input class="weui-input" id="write_off_num" name="write_off_num" placeholder="请输入验证码" />
+            </div>
+
+        </div>
+
+    </div>
+    <div class="weui-btn">
+        <button class="weui-btn-btn" id="add" type="button">兑换</button>
+    </div>
+</form>
+<div class="goodsimg" style="display: none" id="content"><img src="images/goodsimg.jpg"></div>
+<form id="recform" style="display: none">
+    <div class="listItems-wrap">
+        <input type="hidden" name="order_no" id="order_no_two">
+        <div class="listItems">
+            <div class="listLeft">
+                <div class="list-label">收件人</div>
+            </div>
+            <div class="listRight">
+                <input class="list-input" name="name"  id="name" placeholder="请输入姓名" />
+            </div>
+            <img class="ioc-addtel" src="/assets/gift/images/ioc-addtel.png">
+        </div>
+        <div class="listItems more">
+            <div class="listLeft">
+                <div class="weui-label">手机号</div>
+            </div>
+            <div class="listRight">
+                <input class="weui-input" name="phone" id="phone" placeholder="请输入手机号" />
+            </div>
+            <div>+86</div>
+        </div>
+        <div class="listItems more">
+            <div class="listLeft">
+                <div class="weui-label">所在城市</div>
+            </div>
+            <div class="listRight">
+                <label for="Addr" id="areaLabel">
+                    <input type="text" name="Addr" id="Addr" class="select-value" readonly placeholder="请选择地区"></label>
+            </div>
+        </div>
+        <div class="listItems">
+            <div class="listLeft">
+                <div class="weui-label">详细地址</div>
+            </div>
+            <div class="listRight">
+                <textarea class="addtext" name="address" id="address" placeholder="如街道、门牌号、小区、楼栋号、单元室等"></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="weui-btn" id="footer">
+        <button class="weui-btn-btn"  type="button" id="receiveDoBtn">领取</button>
+    </div>
+
+</form>
+<script src="/assets/common/plugins/layer/layer.js"></script>
+<script src="/assets/common/js/jquery.form.min.js"></script>
+
+<script src="/assets/common/js/webuploader.html5only.js"></script>
+<script src="/assets/common/js/art-template.js"></script>
+<script src="/assets/store/js/app.js?v=1"></script>
+<script src="/assets/store/js/file.library.js?v=1"></script>
+<script src="/assets/mpic/json.js"></script>
+<script src="/assets/mpic/jsonExchange.js"></script>
+<script src="/assets/mpic/mPicker.min.js"></script>
+<script>
+    var order_no = '';
+    $(function() {
+
+        /**
+         * 联动的picker
+         * 三级
+         */
+        $('.select-value').mPicker({
+            level:3,
+            dataJson: city3,
+            Linkage:true,
+            rows:6,
+            idDefault:true,
+            splitStr:'-',
+            header:'<div class="mPicker-header">三级联动选择插件</div>',
+            confirm:function(json){
+                //console.info('当前选中json：',json);
+
+            },
+            cancel:function(json){
+                //console.info('当前选中json：',json);
+            }
+        })
+        //获取mpicker实例
+        var method= $('.select-value').data('mPicker');
+        //console.info('第一个mpicker的实例为：',method);
+    });
+    $("#add").on('click',function(){
+    var url = $("#myform").attr('action');
+    var data  = $("#myform").serialize()
+    $.post(url,data,function(res){
+        if(0 == res.code){
+            layer.open({content:res.msg})
+            return false;
+        }
+        console.log(res)
+        $('#myform').hide();
+        if('' != res.data.gift.pic || 'null' != res.data.gift.pic){
+            $("#pic").attr('src',res.data.gift.pic);
+        }
+        $("#order_no_two").val(res.data.order_no)
+        $('#content').show();
+        $("#recform").show();
+        $('#content').html(res.data.gift.content)
+        if(res.data.address != null){
+            //已经填写过收货地址，调用出来
+            $("#name").val(res.data.address.name);
+            $("#phone").val(res.data.address.phone);
+            $("#Addr").val(res.data.address.Addr);
+            $("#address").val(res.data.address.address);
+        }
+        if(res.data.status == 0){
+            $("#receiveDoBtn").attr('disabled',false);
+        }else{
+            $("#receiveDoBtn").attr('disabled',true);
+            $("#receiveDoBtn").html(res.data.statusInfo)
+        }
+
+    })
+})
+    $("#receiveDoBtn").on('click',function(){
+        var _url = "{:url('receiveDo')}";
+        var _data = $("#recform").serialize();
+        $.post(_url,_data,function(res){
+            if(0 == res.code){
+                layer.open({content:res.msg})
+                return false;
+            }
+            layer.open({content:res.msg})
+            $("#receiveDoBtn").attr('disabled',true);
+            $("#receiveDoBtn").html("已领取")
+            console.log(res)
+        })
+    })
+</script>
+</body>
+</html>
+
+
+
